@@ -143,10 +143,18 @@ if ( $dependent_spec ) {
   $indie_count = 1;
 }
 
+my $dc_opt = { dependent_spec   => $dependent_spec,
+               independent_spec => $independent_spec,
+             };
+
+# G::Sp inputs:
+#   $working_area
+#   $image_viewer
+#   $indie_count or $dc_opt
+
 my $gsp = Graphics::Skullplot->new();
 
-# my $filenames = 
-#   generate_filenames( $dbox_file, $working_area );
+# BEG show_plot( $dbox_file )
 
 my $filenames = 
  $gsp->generate_output_filenames( $dbox_file, $working_area );  # TODO fixup interface
@@ -162,24 +170,16 @@ $dbx->output_to_tsv( $tsv_file );
 
 my @header = @{ $dbx->header() };
 
-### moving this to a new module: Data::Classify
-# my $fd = 
-#   classify_fields( $indie_count, \@header );
-my $dc_opt = { dependent_spec   => $dependent_spec,
-               independent_spec => $independent_spec,
-             };
 my $dc = Data::Classify->new;
-
 my $field_metadata = 
   $dc->classify_fields_simple( $indie_count, \@header, $dc_opt );  # TODO fixup interface
 
-### TODO move these to Graphics::SkullPlot
-## plot_tsv_to_png( $filenames, $field_metadata );
 $gsp->plot_tsv_to_png( $filenames, $field_metadata );
 
 my $png_file = $filenames->{ png };
-## exec_to_display_png( $png_file, $image_viewer );
 $gsp->exec_to_display_png( $png_file, $image_viewer );
+
+# END show_plot
 
 #######
 ### end main, into the subs

@@ -103,6 +103,8 @@ GetOptions ("d|debug"       => \$DEBUG,
            "independents=s" => \$independent_spec, # the y-axis
            ) or say_usage();
 
+$image_viewer ||= 'display';
+
 mkpath( $working_area ) unless( -d $working_area );
 
 # TODO dev only: remove when shipped.
@@ -143,43 +145,15 @@ if ( $dependent_spec ) {
   $indie_count = 1;
 }
 
-my $dc_opt = { dependent_spec   => $dependent_spec,
-               independent_spec => $independent_spec,
+my $opt = { indie_count      => $indie_count,
+            dependent_spec   => $dependent_spec,
+            independent_spec => $independent_spec,
              };
 
-# G::Sp inputs:
-#   $working_area
-#   $image_viewer
-#   $indie_count or $dc_opt
+my $gsp = Graphics::Skullplot->new( working_area => $working_area,
+                                    image_viewer => $image_viewer);
 
-my $gsp = Graphics::Skullplot->new();
-
-# BEG show_plot( $dbox_file )
-
-my $filenames = 
- $gsp->generate_output_filenames( $dbox_file, $working_area );  # TODO fixup interface
-
-my $dbox_name = $filenames->{ base };
-my $tsv_file  = $filenames->{ tsv };
-
-($DEBUG) && print "input dbox name: $dbox_name\nintermediate tsv_file: $tsv_file\n";
-
-# input from dbox file, output directly to a tsv file
-my $dbx = Data::BoxFormat->new( input_file  => $dbox_file );
-$dbx->output_to_tsv( $tsv_file );
-
-my @header = @{ $dbx->header() };
-
-my $dc = Data::Classify->new;
-my $field_metadata = 
-  $dc->classify_fields_simple( $indie_count, \@header, $dc_opt );  # TODO fixup interface
-
-$gsp->plot_tsv_to_png( $filenames, $field_metadata );
-
-my $png_file = $filenames->{ png };
-$gsp->exec_to_display_png( $png_file, $image_viewer );
-
-# END show_plot
+$gsp->show_plot( $dbox_file, $opt ); # TODO rename with "exec", make clear this must be last?
 
 #######
 ### end main, into the subs

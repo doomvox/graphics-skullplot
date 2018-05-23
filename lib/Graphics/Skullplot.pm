@@ -91,11 +91,6 @@ Example usage:
 
 =cut 
 
-# DELME
-#   ( my $tsv_name     = $basename ) =~ s{ \. (.*) $ }{.tsv}x;
-#   ( my $rscript_name = $basename ) =~ s{ \. (.*) $ }{.r}x;
-#   ( my $png_name     = $basename ) =~ s{ \. (.*) $ }{.png}x;
-
 sub generate_output_filenames {
   my $self = shift;
   my $input_file    = shift;
@@ -237,7 +232,7 @@ Example uses:  TODO OOPS: $gcp->
 sub exec_to_display_png {
   my $self = shift;
   my $png_file     = shift;
-  my $image_viewer = shift; # effective default is 'display'
+  my $image_viewer = shift || 'display'; # ImageMagick viewer
 
   my $erroff = '2>/dev/null';
   $erroff = '' if $DEBUG;
@@ -245,10 +240,11 @@ sub exec_to_display_png {
   # Defaulting to ImageMagick's "display" is good, because I can
   # use a dependency on Perlmagick to ensure that it's available.
   my $vcmd;
-  if ( $image_viewer ) { 
-    $vcmd = qq{ $image_viewer $png_file $erroff };
-  } else {
+  if ( not( $image_viewer ) or ($image_viewer eq 'display') ) {
+    ### TODO change title to basename
     $vcmd = qq{ display -title 'skullplot'  $png_file $erroff };
+  } else {
+    $vcmd = qq{ $image_viewer $png_file $erroff };
   }
   exec( $vcmd );
 }
@@ -257,16 +253,22 @@ sub exec_to_display_png {
 
 =item show_plot
 
+The main entry-point to be called by the skullplot.pl script 
+to plot the data in a "data box format" file, using the 
+hints supplied in the options hash (the second argument).
+
+Example usage:
+   
+   my $opt = { indie_count      => $indie_count,
+               dependent_spec   => $dependent_spec,
+               independent_spec => $independent_spec,
+             };
+   $gsp->show_plot( $dbox_file, $opt ); 
+
 =cut
 
 sub show_plot {
   my $self = shift;
-
-  # BEG show_plot( $dbox_file, $opt )
-  # my $opt = { indie_count      => $indie_count,
-  #             dependent_spec   => $dependent_spec,
-  #             independent_spec => $independent_spec,
-  #              };
 
   my $dbox_file = shift;
   my $opt       = shift;

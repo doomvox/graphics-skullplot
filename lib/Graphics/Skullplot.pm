@@ -21,7 +21,7 @@ my $DEBUG = 1;
    my $gsp = Graphics::Skullplot->new( working_area => $working_area,
                                        image_viewer => $image_viewer);
    my $opt = ;
-   $gsp->show_plot( $dbox_file, { indie_count      => $indie_count,
+   $gsp->show_plot_and_exit( $dbox_file, { indie_count      => $indie_count,
                                   dependent_spec   => $dependent_spec,
                                   independent_spec => $independent_spec,
                                  } ); 
@@ -74,18 +74,30 @@ Defaults to 'display', the ImageMagick viewer
 # Example attribute:
 # has is_loop => ( is => 'rw', isa => Int, default => 0 );
 
+# required arguments to new
+has input_file => ( is => 'ro', isa => Str );  # currently, must be dbox format
+has plot_hints => ( is => 'ro', isa => HashRef );
+
+# strongly recommended argument "working_area".  image_viewer has okay default.
+# (( TODO I can't use the "default" value, Str complains if you give it an undef
+#      Try:  Maybe[Str]  ))
 has working_area => ( is => 'rw', isa => Str, default => "/tmp" );
-has image_viewer => ( is => 'rw', isa => Str, default => "gthumb" );  # effective default: "display"
+has image_viewer => ( is => 'rw', isa => Maybe[Str], default => "display" );  # ImageMagick
+
+# mostly internal use
+has naming         => ( is => 'rw', isa => HashRef ); # lazy via generate_output_filenames?
+has field_metadata => ( is => 'rw', isa => HashRef ); # need wrapper around D::C classify_fields_simple (and another wrapper inside D::C that defaults to simple for now...)
+
 
 =item generate_output_filenames
 
-Example usage:
+Example usage: 
 
-  $input_file = "expensoids.dbox"; # for example, any name with an extension works
+  # relies on "input_file" field in object, along with "working area"
   my $fn = 
-    generate_filenames( $input_file, $working_area );
+    generate_filenames();
   my $basename = $fn->{ base };
-  # paths to file in $working_area
+  # full paths to file in $working_area
   my $tsv_file  = $fn->{ tsv };  
   my $png_file  = $fn->{ png };  
 
@@ -93,8 +105,8 @@ Example usage:
 
 sub generate_output_filenames {
   my $self = shift;
-  my $input_file    = shift;
-  my $working_area = shift;
+  my $input_file   = $self->input_file   || shift;
+  my $working_area = $self->working_area || shift;
   
   my $basename = basename( $input_file ); # includes file-extension
 
@@ -120,6 +132,7 @@ sub generate_output_filenames {
      rscript          => $rscript_file,
      png              => $png_file
      );
+  $self->naming( \%filenames );
   return \%filenames;
 }
 
@@ -136,18 +149,17 @@ the hash of field metadata.
 
    x-axis  gb-cat1  gb-cat2  ... y-axis  ... 
 
-Example usages:  TODO OOPS: $gcp->
+Example usages:  
 
-#  plot_tsv_to_png( $x_field, $y_field, $gb_cats, $fn );
-
-  plot_tsv_to_png( $fn, $fd );
+  # uses "naming" and "field_metadata" from object
+  $self->plot_tsv_to_png();
 
 =cut 
 
 sub plot_tsv_to_png {
   my $self = shift;
-  my $fn = shift;
-  my $fd = shift; 
+  my $fn = $self->naming         || shift;
+  my $fd = $self->field_metadata || shift; 
 #  my ($x_field, $y_field, $gb_cats) = @{ $fd->{ qw( x  y  gb_cats ) }}; # hash slice (mangled)
 
   my $x_field = $fd->{ x };
@@ -211,28 +223,30 @@ __END_R_CODE
   system( $cmd );
 }
 
-
-=item exec_to_display_png
+=item display_png_and_exit
 
 Open the given png file in an image viewer
-(does an exec as a final step: this should be the last
-thing called by a script).
+
+This internally does an exec: it should be
+the last thing called.
 
 The image viewer can be set as the second, optional field.
 The default image viewer is ImageMagick's "display".
 
-Example uses:  TODO OOPS: $gcp->
+Example usage:
 
-   exec_to_display_png( $png_file );
-
-   exec_to_display_png( $png_file, $image_viewer );
+  my $naming = $self->naming;
+  my $png_file = $naming->{ png };
+  $self->display_png_and_exit( $png_file );
 
 =cut
 
-sub exec_to_display_png {
+sub display_png_and_exit {
   my $self = shift;
-  my $png_file     = shift;
+  my $png_file     = shift;  ## TODO make this optional...
   my $image_viewer = shift || 'display'; # ImageMagick viewer
+# TODO do this instead soon, define default elsewhere
+#  my $image_viewer = $self->image_viewer || shift;
 
   my $erroff = '2>/dev/null';
   $erroff = '' if $DEBUG;
@@ -241,7 +255,7 @@ sub exec_to_display_png {
   # use a dependency on Perlmagick to ensure that it's available.
   my $vcmd;
   if ( not( $image_viewer ) or ($image_viewer eq 'display') ) {
-    ### TODO change title to basename
+    ### TODO improve title-- use basename, etc
     $vcmd = qq{ display -title 'skullplot'  $png_file $erroff };
   } else {
     $vcmd = qq{ $image_viewer $png_file $erroff };
@@ -251,54 +265,64 @@ sub exec_to_display_png {
 
 
 
-=item show_plot
+=item show_plot_and_exit
 
-The main entry-point to be called by the skullplot.pl script 
-to plot the data in a "data box format" file, using the 
-hints supplied in the options hash (the second argument).
+The method called by the skullplot.pl script to actually
+plot the data from a "data box format" file, using the 
+plot_hints.
 
-Example usage:
+It's expected that the dbox file (L<input_file>) and the
+L<plot_hints> will be defined at object creation, but at
+present those settings may be overridden here and given as
+first and second arguments.
+
+This should be used at the end of the program (internally 
+it does an "exec").
+
+Example usage, over-riding object fields locally:
    
-   my $opt = { indie_count      => $indie_count,
-               dependent_spec   => $dependent_spec,
-               independent_spec => $independent_spec,
-             };
-   $gsp->show_plot( $dbox_file, $opt ); 
+   my $plot_hints = { indie_count      => $indie_count,
+                      dependent_spec   => $dependent_spec,
+                      independent_spec => $independent_spec,
+                    };
+   $gsp->show_plot_and_exit( $dbox_file, $plot_hints ); 
 
 =cut
 
-sub show_plot {
+sub show_plot_and_exit {
   my $self = shift;
 
-  my $dbox_file = shift;
-  my $opt       = shift;
-  my $indie_count = $opt->{ indie_count };
+  my $dbox_file = $self->input_file || shift;
+  my $opt       = $self->plot_hints || shift;
+  my $indie_count = $opt->{ indie_count };  
 
   my $working_area = $self->working_area;
   my $image_viewer = $self->image_viewer;
 
-  my $filenames = 
-    $self->generate_output_filenames( $dbox_file, $working_area ); # TODO fixup interface
+  my $naming = 
+    $self->generate_output_filenames();   # now, also sets obj field 'naming'
 
-  my $dbox_name = $filenames->{ base };
-  my $tsv_file  = $filenames->{ tsv };
+  my $dbox_name = $naming->{ base };
+  my $tsv_file  = $naming->{ tsv };
 
   ($DEBUG) && print "input dbox name: $dbox_name\nintermediate tsv_file: $tsv_file\n";
 
-  # input from dbox file, output directly to a tsv file
+  # input from dbox file, output directly to a tsv file (( TODO later: move to obj field ))
   my $dbx = Data::BoxFormat->new( input_file  => $dbox_file );
   $dbx->output_to_tsv( $tsv_file );
 
   my @header = @{ $dbx->header() };
 
+  # TODO: later: move to obj field (aggregation, ja?)
   my $dc = Data::Classify->new;
   my $field_metadata = 
     $dc->classify_fields_simple( $indie_count, \@header, $opt ); # TODO fixup interface
+  $self->field_metadata( $field_metadata );
 
-  $self->plot_tsv_to_png( $filenames, $field_metadata );
+  $self->plot_tsv_to_png( $naming, $field_metadata ); # TODO these args are now optional
 
-  my $png_file = $filenames->{ png };
-  $self->exec_to_display_png( $png_file, $image_viewer );
+  my $png_file = $naming->{ png };
+  $self->display_png_and_exit( $png_file, $image_viewer ); # TODO png_file arg still needed
 }
 
 

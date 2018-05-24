@@ -148,12 +148,14 @@ if ( $dependent_spec ) {
 my $opt = { indie_count      => $indie_count,
             dependent_spec   => $dependent_spec,
             independent_spec => $independent_spec,
-             };
-
+           };
 my $gsp = Graphics::Skullplot->new( working_area => $working_area,
-                                    image_viewer => $image_viewer);
+                                    image_viewer => $image_viewer,
+                                    input_file   => $dbox_file,
+                                    plot_hints   => $opt,
+                                  );
 
-$gsp->show_plot( $dbox_file, $opt ); # TODO rename with "exec", make clear this must be last?
+$gsp->show_plot_and_exit();  # does an exec 
 
 #######
 ### end main, into the subs

@@ -38,18 +38,18 @@ can be used to generate and display plots of the data in png format.
 
 =cut
 
-use 5.008;
+use 5.10.0;
 use Carp;
 use Data::Dumper;
 use File::Basename  qw( fileparse basename dirname );
 use List::Util      qw( first max maxstr min minstr reduce shuffle sum );
 use List::MoreUtils qw( any zip uniq );
 
+use lib "../../../Data-Classify/lib";   # TODO devonly, remove when ship
+use lib "../../../Data-BoxFormat/lib";  # TODO devonly, remove when ship
+
 use Data::BoxFormat;
 use Data::Classify;
-
-# needed for accessor generation
-our $AUTOLOAD;
 
 =item new
 
@@ -71,18 +71,18 @@ Defaults to 'display', the ImageMagick viewer
 
 =cut
 
-# Example attribute:
-# has is_loop => ( is => 'rw', isa => Int, default => 0 );
-
-# required arguments to new
+# required arguments to new  (( add Moo flag: make these required ))
 has input_file => ( is => 'ro', isa => Str );  # currently, must be dbox format
 has plot_hints => ( is => 'ro', isa => HashRef );
 
-# strongly recommended argument "working_area".  image_viewer has okay default.
-# (( TODO I can't use the "default" value, Str complains if you give it an undef
-#      Try:  Maybe[Str]  ))
-has working_area => ( is => 'rw', isa => Str, default => "/tmp" );
-has image_viewer => ( is => 'rw', isa => Maybe[Str], default => "display" );  # ImageMagick
+has working_area => ( is => 'rw', isa => Maybe[Str], default => "/tmp" );
+has image_viewer => ( is => 'rw',  isa => Maybe[Str], lazy => 1, builder => "_builder_image_viewer" );  # ImageMagick's display
+
+sub _builder_image_viewer {
+  my $self = shift;
+  ($DEBUG) && print STDERR "Running _builder_image_viewer... \n";
+  return "display";
+}
 
 # mostly internal use
 has naming         => ( is => 'rw', isa => HashRef ); # lazy via generate_output_filenames?
@@ -244,9 +244,9 @@ Example usage:
 sub display_png_and_exit {
   my $self = shift;
   my $png_file     = shift;  ## TODO make this optional...
-  my $image_viewer = shift || 'display'; # ImageMagick viewer
+#  my $image_viewer = shift || 'display'; # ImageMagick viewer
 # TODO do this instead soon, define default elsewhere
-#  my $image_viewer = $self->image_viewer || shift;
+  my $image_viewer = $self->image_viewer || shift;
 
   my $erroff = '2>/dev/null';
   $erroff = '' if $DEBUG;
@@ -254,7 +254,14 @@ sub display_png_and_exit {
   # Defaulting to ImageMagick's "display" is good, because I can
   # use a dependency on Perlmagick to ensure that it's available.
   my $vcmd;
-  if ( not( $image_viewer ) or ($image_viewer eq 'display') ) {
+
+  # TODO drop the hidden default here, once this is working at object level
+  if( not( $image_viewer ) ) {
+    ($DEBUG) && print STDERR "MooFAIL: last ditch default to IM display\n";
+    $image_viewer = 'display';
+  }
+
+  if ($image_viewer eq 'display')  {
     ### TODO improve title-- use basename, etc
     $vcmd = qq{ display -title 'skullplot'  $png_file $erroff };
   } else {
@@ -292,6 +299,8 @@ Example usage, over-riding object fields locally:
 sub show_plot_and_exit {
   my $self = shift;
 
+  if ($DEBUG) { say "AAA"; $self->dumporama() };
+
   my $dbox_file = $self->input_file || shift;
   my $opt       = $self->plot_hints || shift;
   my $indie_count = $opt->{ indie_count };  
@@ -321,11 +330,64 @@ sub show_plot_and_exit {
 
   $self->plot_tsv_to_png( $naming, $field_metadata ); # TODO these args are now optional
 
+  if ($DEBUG) { say "BBB"; $self->dumporama() };
+
   my $png_file = $naming->{ png };
-  $self->display_png_and_exit( $png_file, $image_viewer ); # TODO png_file arg still needed
+#   $self->display_png_and_exit( $png_file, $image_viewer ); # TODO png_file arg still needed
+  $self->display_png_and_exit( $png_file ); # TODO png_file arg still needed
 }
 
 
+
+
+
+
+=item dumporama
+
+Report on state of object fields-- might
+inadvertantly run default/builder code by
+accessing them.
+
+=cut
+
+sub dumporama {
+  my $self = shift;
+  say "Graphics::Skullplot self: ", Dumper( $self );
+#   printf "input_file: %s\n"     , $self->input_file;
+#   # printf "plot_hints: %s\n"     , $self->fryhash( $self->plot_hints );
+#   printf "plot_hints: %s\n"     , Dumper( $self->plot_hints );
+#   printf "working_area: %s\n"   , $self->working_area;
+#   printf "image_viewer: %s\n"   , $self->image_viewer;
+#   # printf "naming: %s\n"         , $self->fryhash( $self->naming );
+#   printf "naming: %s\n"         , Dumper( $self->naming );
+#   # printf "field_metadata: %s\n" , $self->fryhash( $self->field_metadata );
+#   printf "field_metadata: %s\n" , Dumper( $self->field_metadata );
+}
+
+
+
+=item fryhash
+
+=cut
+
+sub fryhash {
+  my $self = shift;
+  my $href = shift;
+
+  my @keys = keys %{ $href };
+  my $rep = "\n" if @keys;
+  foreach my $k (@keys) {
+    my $val = $href->{ $k } || '';
+    if( ref $val eq 'HASH') {
+      $rep .= $self->fryhash( $val );
+    } elsif( ref $val eq 'ARRAY') {
+      $rep .= join " ", @{ $val };
+    } else {
+      $rep .= sprintf "         %25s: %s\n", $k, $val;
+    }
+  }
+  return $rep;
+}
 
 
 

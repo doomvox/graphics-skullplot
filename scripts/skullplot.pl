@@ -93,9 +93,7 @@ GetOptions ("d|debug"       => \$DEBUG,
             "h|?|help"      => sub{ say_usage();   },
 
            "indie_count=i"  => \$indie_count,      # alt spec: indies=x1+gbcats; residue are ys
-
            "image_viewer=s" => \$image_viewer,     # default: ImageMagick's display (if available)
-
            "working_area=s" => \$working_area,
 
            ## Experimental, alternate interface
@@ -103,7 +101,7 @@ GetOptions ("d|debug"       => \$DEBUG,
            "independents=s" => \$independent_spec, # the y-axis
            ) or say_usage();
 
-$image_viewer ||= 'display';
+### $image_viewer ||= 'display';
 
 mkpath( $working_area ) unless( -d $working_area );
 
@@ -149,11 +147,13 @@ my $opt = { indie_count      => $indie_count,
             dependent_spec   => $dependent_spec,
             independent_spec => $independent_spec,
            };
-my $gsp = Graphics::Skullplot->new( working_area => $working_area,
-                                    image_viewer => $image_viewer,
-                                    input_file   => $dbox_file,
-                                    plot_hints   => $opt,
-                                  );
+
+my %gsp_args = 
+  ( input_file   => $dbox_file,
+    plot_hints   => $opt, );
+$gsp_args{ working_area } = $working_area if $working_area;
+$gsp_args{ image_viewer } = $image_viewer if $image_viewer;
+my $gsp = Graphics::Skullplot->new( %gsp_args );
 
 $gsp->show_plot_and_exit();  # does an exec 
 
@@ -234,3 +234,4 @@ See http://dev.perl.org/licenses/ for more information.
 None reported... yet.
 
 =cut
+

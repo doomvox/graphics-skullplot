@@ -229,9 +229,11 @@ by the Free Software Foundation; or the Artistic License.
 
 See http://dev.perl.org/licenses/ for more information.
 
-=head1 BUGS
+=head1 trials
 
-None reported... yet.
+Command line I use to excercize this at the moment:
+
+  /home/doom/End/Cave/SkullPlot/Wall/Graphics-Skullplot/scripts/skullplot.pl /home/doom/End/Cave/SkullPlot/tmp/silver_polls_number_vs_bias.dbox
 
 =cut
 

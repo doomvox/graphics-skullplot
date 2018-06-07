@@ -4,7 +4,7 @@ use MooX::Types::MooseLike::Base qw(:all);
 
 =head1 NAME
 
-Graphics::Skullplot - The great new Graphics::Skullplot! TODO revise this
+Graphics::Skullplot - Plot the result of an SQL select from the terminal
 
 =head1 VERSION
 
@@ -18,19 +18,32 @@ my $DEBUG = 1;
 
 =head1 SYNOPSIS
 
-   my $gsp = Graphics::Skullplot->new( working_area => $working_area,
-                                       image_viewer => $image_viewer);
-   my $opt = ;
-   $gsp->show_plot_and_exit( $dbox_file, { indie_count      => $indie_count,
-                                  dependent_spec   => $dependent_spec,
-                                  independent_spec => $independent_spec,
-                                 } ); 
+   # the code used by skullplot.pl
+   my $plot_hints = { indie_count      => $indie_count,
+                      dependent_spec   => $dependent_spec,
+                      independent_spec => $independent_spec,
+                    };
+   my %gsp_args = 
+     ( input_file   => $dbox_file,
+       plot_hints   => $plot_hints, );
+   $gsp_args{ working_area } = $working_area if $working_area;
+   $gsp_args{ image_viewer } = $image_viewer if $image_viewer;
+   my $gsp = Graphics::Skullplot->new( %gsp_args );
+
+   $gsp->show_plot_and_exit();  # does an exec 
+
+
 
 =head1 DESCRIPTION
 
 Graphics::Skullplot is a module that works with the result from a database 
-select in the common tabular text "data box" format. It has routines that 
-can be used to generate and display plots of the data in png format.
+select in the common tabular text "data box" format. It has routines 
+to generate and display plots of the data in png format.
+
+Internally it uses the L<Data::BoxFormat> module to parse the text table,
+and the L<Data::Classify> module to determine the types of the columns.
+
+The default image viewer is the ImageMagick "display" command.
 
 =head1 METHODS
 
@@ -72,22 +85,25 @@ Defaults to 'display', the ImageMagick viewer
 =cut
 
 # required arguments to new  (( add Moo flag: make these required ))
-has input_file => ( is => 'ro', isa => Str );  # currently, must be dbox format
+has input_file => ( is => 'ro', isa => Str     );  # must be dbox format 
 has plot_hints => ( is => 'ro', isa => HashRef );
 
 has working_area => ( is => 'rw', isa => Maybe[Str], default => "/tmp" );
-has image_viewer => ( is => 'rw',  isa => Maybe[Str], lazy => 1, builder => "_builder_image_viewer" );  # ImageMagick's display
-
-sub _builder_image_viewer {
-  my $self = shift;
-  ($DEBUG) && print STDERR "Running _builder_image_viewer... \n";
-  return "display";
-}
+has image_viewer => ( is => 'rw', isa => Maybe[Str], lazy => 1, builder => "builder_image_viewer" );  # ImageMagick's display
 
 # mostly internal use
 has naming         => ( is => 'rw', isa => HashRef ); # lazy via generate_output_filenames?
 has field_metadata => ( is => 'rw', isa => HashRef ); # need wrapper around D::C classify_fields_simple (and another wrapper inside D::C that defaults to simple for now...)
 
+=item builder methods (largely for internal use)
+
+=cut 
+
+sub builder_image_viewer {
+  my $self = shift;
+  ($DEBUG) && print STDERR "Running _builder_image_viewer... \n";
+  return "display";
+}
 
 =item generate_output_filenames
 
@@ -175,8 +191,9 @@ sub plot_tsv_to_png {
   # TODO
   # At present, limited to two group by categories (in addition to the x-axis)
   # Maybe: if there's more than 2, fuse them together into a compound cat, hand to colour
-  my $gb_cat1 = $gb_cats[0] if $gb_cats[0];
-  my $gb_cat2 = $gb_cats[1] if $gb_cats[1];
+  my ($gb_cat1, $gb_cat2);
+  $gb_cat1 = $gb_cats[0] if $gb_cats[0];
+  $gb_cat2 = $gb_cats[1] if $gb_cats[1];
 
   # plot code
   my $pc = 'ggplot( skull, ' ;
@@ -287,7 +304,7 @@ This should be used at the end of the program (internally
 it does an "exec").
 
 Example usage, over-riding object fields locally:
-   
+
    my $plot_hints = { indie_count      => $indie_count,
                       dependent_spec   => $dependent_spec,
                       independent_spec => $independent_spec,
@@ -375,7 +392,8 @@ sub fryhash {
   my $href = shift;
 
   my @keys = keys %{ $href };
-  my $rep = "\n" if @keys;
+  my $rep;
+  $rep = "\n" if @keys;
   foreach my $k (@keys) {
     my $val = $href->{ $k } || '';
     if( ref $val eq 'HASH') {
@@ -411,8 +429,8 @@ See http://dev.perl.org/licenses/ for more information.
 =head1 BUGS
 
 Please report any bugs or feature requests to C<bug-emacs-run at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Emacs-Run>.  I will be notified, and then you'll
-automatically be notified of progress on your bug as I make changes.
+the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Emacs-Run>.  
+I will be notified, and then you'll automatically be notified of progress on your bug as I make changes.
 
 =head1 SUPPORT
 
@@ -441,9 +459,6 @@ L<http://cpanratings.perl.org/d/Emacs-Run>
 L<http://search.cpan.org/dist/Emacs-Run/>
 
 =back
-
-=head1 ACKNOWLEDGEMENTS
-
 
 =head1 COPYRIGHT AND LICENSE
 

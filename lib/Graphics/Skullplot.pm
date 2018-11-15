@@ -12,16 +12,15 @@ Version 0.01
 
 =cut
 
-# TODO revise these before shipping
 our $VERSION = '0.01';
-my $DEBUG = 1;
+my $DEBUG = 0;
 
 =head1 SYNOPSIS
 
    # the code used by skullplot.pl
-   my $plot_hints = { indie_count      => $indie_count,
-                      dependent_spec   => $dependent_spec,
-                      independent_spec => $independent_spec,
+   my $plot_hints = { indie_count           => $indie_count,
+                      dependent_requested   => $dependent_requested,
+                      independent_requested => $independent_requested,
                     };
    my %gsp_args = 
      ( input_file   => $dbox_file,
@@ -32,8 +31,6 @@ my $DEBUG = 1;
 
    $gsp->show_plot_and_exit();  # does an exec 
 
-
-
 =head1 DESCRIPTION
 
 Graphics::Skullplot is a module that works with the result from a database 
@@ -41,7 +38,7 @@ select in the common tabular text "data box" format. It has routines
 to generate and display plots of the data in png format.
 
 Internally it uses the L<Data::BoxFormat> module to parse the text table,
-and the L<Data::Classify> module to determine the types of the columns.
+and the L<Graphics::Skullplot::ClassifyColumns> module to determine the types of the columns.
 
 The default image viewer is the ImageMagick "display" command.
 
@@ -58,11 +55,13 @@ use File::Basename  qw( fileparse basename dirname );
 use List::Util      qw( first max maxstr min minstr reduce shuffle sum );
 use List::MoreUtils qw( any zip uniq );
 
-use lib "../../../Data-Classify/lib";   # TODO devonly, remove when ship
-use lib "../../../Data-BoxFormat/lib";  # TODO devonly, remove when ship
+use Image::Magick;
+
+use lib "../../../Data-Classify/lib";   
+use lib "../../../Data-BoxFormat/lib";  
 
 use Data::BoxFormat;
-use Data::Classify;
+use Graphics::Skullplot::ClassifyColumns;
 
 =item new
 
@@ -79,23 +78,26 @@ Defaults to "/tmp".
 =item image_viewer
 
 Defaults to 'display', the ImageMagick viewer
+(a dependency on Image::Magick ensures it's available)
 
 =back
 
 =cut
 
-# required arguments to new  (( add Moo flag: make these required ))
-has input_file => ( is => 'ro', isa => Str     );  # must be dbox format 
-has plot_hints => ( is => 'ro', isa => HashRef );
+# required arguments to new 
+has input_file => ( is => 'ro', isa => Str,      required => 1);  # must be dbox format 
+has plot_hints => ( is => 'ro', isa => HashRef,  required => 1);
 
 has working_area => ( is => 'rw', isa => Maybe[Str], default => "/tmp" );
-has image_viewer => ( is => 'rw', isa => Maybe[Str], lazy => 1, builder => "builder_image_viewer" );  # ImageMagick's display
+has image_viewer => ( is => 'rw', isa => Maybe[Str], lazy => 1, builder => "builder_image_viewer" );  
 
-# mostly internal use
-has naming         => ( is => 'rw', isa => HashRef ); # lazy via generate_output_filenames?
-has field_metadata => ( is => 'rw', isa => HashRef ); # need wrapper around D::C classify_fields_simple (and another wrapper inside D::C that defaults to simple for now...)
+# mostly for internal use
+has naming         => ( is => 'rw', isa => HashRef, lazy => 1, builder => "generate_output_filenames" ); 
 
 =item builder methods (largely for internal use)
+
+builder_image_viewer Currently just returns a hardcoded selection
+(the ImageMagick "display" program).
 
 =cut 
 
@@ -109,7 +111,7 @@ sub builder_image_viewer {
 
 Example usage: 
 
-  # relies on "input_file" field in object, along with "working area"
+  # relies on object settings: "input_file" and "working area"
   my $fn = 
     generate_filenames();
   my $basename = $fn->{ base };
@@ -148,7 +150,7 @@ sub generate_output_filenames {
      rscript          => $rscript_file,
      png              => $png_file
      );
-  $self->naming( \%filenames );
+  # $self->naming( \%filenames );  # Tue  November 13, 2018  20:04  tango
   return \%filenames;
 }
 
@@ -156,44 +158,31 @@ sub generate_output_filenames {
 =item plot_tsv_to_png
 
 Generate the r-code to plot the tsv file data as the png file.
-Takes two arguments, the hash of file definitions and 
-the hash of field metadata.
+Takes one argument, a hash of "field metadata".  
 
-   x-axis  ...  y-axis  ... 
-
-   x-axis  gb-cat1  ... y-axis  ... 
-
-   x-axis  gb-cat1  gb-cat2  ... y-axis  ... 
+The file names (tsv, png, plus internal formats) come from the
+"naming" object field.
 
 Example usages:  
-
-  # uses "naming" and "field_metadata" from object
-  $self->plot_tsv_to_png();
+  
+  $self->plot_tsv_to_png( $plot_cols ); 
 
 =cut 
 
 sub plot_tsv_to_png {
   my $self = shift;
-  my $fn = $self->naming         || shift;
-  my $fd = $self->field_metadata || shift; 
-#  my ($x_field, $y_field, $gb_cats) = @{ $fd->{ qw( x  y  gb_cats ) }}; # hash slice (mangled)
+  my $cd   = shift; 
+  my $fn   = $self->naming         || shift;
 
-  my $x_field = $fd->{ x };
-  my $y_field = $fd->{ y };
-  my $gb_cats = $fd->{ gb_cats };
+#  my ($x_field, $y_field, $gb_cats) = @{ $cd->{ qw( x  y  gb_cats ) }}; # hash slice (mangled)
 
-  my $tsv_file     = $fn->{ tsv };
-  my $rscript_file = $fn->{ rscript };
-  my $png_file     = $fn->{ png };
-  
-  my @gb_cats = @{ $gb_cats }; # TODO cleanup 
+  my $x_field = $cd->{ indie_x };
+  my $y_field = $cd->{ y } || $cd->{ dependents_y }->[0] ;
+  my $gb_cats = $cd->{ gb_cats };
 
-  # TODO
-  # At present, limited to two group by categories (in addition to the x-axis)
-  # Maybe: if there's more than 2, fuse them together into a compound cat, hand to colour
   my ($gb_cat1, $gb_cat2);
-  $gb_cat1 = $gb_cats[0] if $gb_cats[0];
-  $gb_cat2 = $gb_cats[1] if $gb_cats[1];
+  $gb_cat1 = $gb_cats->[0] if $gb_cats->[0];
+  $gb_cat2 = $gb_cats->[1] if $gb_cats->[1];
 
   # plot code
   my $pc = 'ggplot( skull, ' ;
@@ -206,6 +195,78 @@ sub plot_tsv_to_png {
   $pc .= ' + geom_point( ' ;
   $pc .= "              size  = 2.5 " ;
   $pc .= '              )  ' ;
+
+  $self->generate_png_file( $pc, $fn );
+}
+
+
+
+=item plot_tsv_to_png_x_date_y_numeric
+
+EXPERIMENTAL.  NOT WORKING.
+
+Variant of L<plot_tsv_to_png>, to handle dates better on the horizontal axis.
+
+TODO:  R lang issues with Date objects in the data frame "skull"
+
+=cut
+
+sub plot_tsv_to_png_x_date_y_numeric {
+  my $self = shift;
+  my $cd = shift; 
+  my $fn = $self->naming         || shift;
+
+#  my ($x_field, $y_field, $gb_cats) = @{ $cd->{ qw( x  y  gb_cats ) }}; # hash slice (mangled)
+
+  my $x_field = $cd->{ indie_x };
+#  my $y_field = $cd->{ y };
+  my $y_field = $cd->{ y } || $cd->{ dependents_y }->[0] ;
+  my $gb_cats = $cd->{ gb_cats };
+
+  my ($gb_cat1, $gb_cat2);
+  $gb_cat1 = $gb_cats->[0] if $gb_cats->[0];
+  $gb_cat2 = $gb_cats->[1] if $gb_cats->[1];
+
+  # plot code
+  my $pc = 'p <- ggplot( skull, ' ;
+  $pc .= '               aes(' ;
+  $pc .= "                    x = $x_field," ;
+  $pc .= "                    y = $y_field, " ;
+  $pc .= "                    colour = $gb_cat1," if $gb_cat1;
+  $pc .= "                    shape  = $gb_cat2 " if $gb_cat2;
+  $pc .= '                          ))' ;
+  $pc .= ' + geom_point( ' ;
+  $pc .= "              size  = 2.5 " ;
+  $pc .= '              )  ' ;
+
+  $self->generate_png_file( $pc, $fn );
+
+}
+
+
+=item generate_png_file
+
+Example usage:
+
+  $self->generate_png_file( $pc, $fn );
+
+Runs the given plot code (first argument) using the file-name metadata
+(second argument, defaults to object's L<naming>), saving the 
+plot as a png file ($fn->{png}).
+
+This generates a file of R code to run with an Rscript call.
+In debug mode, this generates a standalone unix script. ($DEBUG).
+
+=cut
+
+sub generate_png_file {
+  my $self = shift;
+  my $pc   = shift;
+  my $fn   = shift || $self->naming; 
+
+  my $tsv_file     = $fn->{ tsv };
+  my $rscript_file = $fn->{ rscript };
+  my $png_file     = $fn->{ png };
 
   # Generate the file of R code to run with an Rscript call
   # (in debug mode, make it a standalone unix script)
@@ -240,9 +301,13 @@ __END_R_CODE
   system( $cmd );
 }
 
+
+
+
 =item display_png_and_exit
 
 Open the given png file in an image viewer
+Defaults to "png" field in object's "naming".
 
 This internally does an exec: it should be
 the last thing called.
@@ -259,28 +324,21 @@ Example usage:
 =cut
 
 sub display_png_and_exit {
-  my $self = shift;
-  my $png_file     = shift;  ## TODO make this optional...
-#  my $image_viewer = shift || 'display'; # ImageMagick viewer
-# TODO do this instead soon, define default elsewhere
+  my $self        = shift;
+  my $fn          = $self->naming; 
+  my $png_file    = shift || $fn->{ png };
+  my $basename = $fn->{ base } || '';
+
   my $image_viewer = $self->image_viewer || shift;
 
-  my $erroff = '2>/dev/null';
+  my $erroff = ' 2>/dev/null';
   $erroff = '' if $DEBUG;
 
-  # Defaulting to ImageMagick's "display" is good, because I can
-  # use a dependency on Perlmagick to ensure that it's available.
   my $vcmd;
-
-  # TODO drop the hidden default here, once this is working at object level
-  if( not( $image_viewer ) ) {
-    ($DEBUG) && print STDERR "MooFAIL: last ditch default to IM display\n";
-    $image_viewer = 'display';
-  }
-
   if ($image_viewer eq 'display')  {
-    ### TODO improve title-- use basename, etc
-    $vcmd = qq{ display -title 'skullplot'  $png_file $erroff };
+    my $title = "skullplot";
+    # $title .=  ": $basename" if $basename;
+    $vcmd = qq{ display -title $title  $png_file $erroff };
   } else {
     $vcmd = qq{ $image_viewer $png_file $erroff };
   }
@@ -303,14 +361,6 @@ first and second arguments.
 This should be used at the end of the program (internally 
 it does an "exec").
 
-Example usage, over-riding object fields locally:
-
-   my $plot_hints = { indie_count      => $indie_count,
-                      dependent_spec   => $dependent_spec,
-                      independent_spec => $independent_spec,
-                    };
-   $gsp->show_plot_and_exit( $dbox_file, $plot_hints ); 
-
 =cut
 
 sub show_plot_and_exit {
@@ -319,41 +369,67 @@ sub show_plot_and_exit {
   if ($DEBUG) { say "AAA"; $self->dumporama() };
 
   my $dbox_file = $self->input_file || shift;
-  my $opt       = $self->plot_hints || shift;
-  my $indie_count = $opt->{ indie_count };  
 
-  my $working_area = $self->working_area;
-  my $image_viewer = $self->image_viewer;
-
-  my $naming = 
-    $self->generate_output_filenames();   # now, also sets obj field 'naming'
+  my $naming = $self->naming;
 
   my $dbox_name = $naming->{ base };
   my $tsv_file  = $naming->{ tsv };
-
   ($DEBUG) && print "input dbox name: $dbox_name\nintermediate tsv_file: $tsv_file\n";
 
-  # input from dbox file, output directly to a tsv file (( TODO later: move to obj field ))
-  my $dbx = Data::BoxFormat->new( input_file  => $dbox_file );
-  $dbx->output_to_tsv( $tsv_file );
+  # the input from the dbox file output directly to a tsv file 
+  my $dbx = Data::BoxFormat->new( input_file  => $dbox_file ); 
+  my $data = $dbx->output_to_tsv( $tsv_file ); # also returns a ref to an array of arrays
 
-  my @header = @{ $dbx->header() };
+  my $plot_cols = $self->classify_columns( $data );
 
-  # TODO: later: move to obj field (aggregation, ja?)
-  my $dc = Data::Classify->new;
-  my $field_metadata = 
-    $dc->classify_fields_simple( $indie_count, \@header, $opt ); # TODO fixup interface
-  $self->field_metadata( $field_metadata );
+  $self->plot_tsv_to_png( $plot_cols ); # Note: uses naming from object
 
-  $self->plot_tsv_to_png( $naming, $field_metadata ); # TODO these args are now optional
-
-  if ($DEBUG) { say "BBB"; $self->dumporama() };
-
-  my $png_file = $naming->{ png };
-#   $self->display_png_and_exit( $png_file, $image_viewer ); # TODO png_file arg still needed
-  $self->display_png_and_exit( $png_file ); # TODO png_file arg still needed
+  if ($DEBUG) { say "About to display png: "; $self->dumporama() };
+  $self->display_png_and_exit(); 
 }
 
+
+
+=item classify_columns
+
+Given a reference to the tabular data in the form of an array of arrays,
+returns metadata for each column to be used in deciding how to plot 
+the data.
+
+Example usage:
+
+  my $plot_cols = $self->classify_columns( $data );
+
+
+Classify the columns from the tabular data, returning a "fields_metadata" hash ref.
+
+This is a wrapper around a provisional technique to make it easier to swap in 
+better ones later.
+
+At present, the metadata fields are:
+
+     x           => $x_field  (( rename indie_x ))
+     y           => $y_field
+     gb_cats      => [ @gb_cats ]
+     dependents_y => [ @dependents_y ]
+
+=cut
+
+sub classify_columns {
+  my $self = shift;
+  my $data = shift;  
+
+  my $opt         = $self->plot_hints || shift;
+  # my $indie_count = $opt->{ indie_count };  
+
+  # use the tsv data to analysis the column types, 
+  # determine what to try to plot
+  my $dc = Graphics::Skullplot::ClassifyColumns->new( data => $data );  
+  my $plot_cols = 
+    $dc->classify_columns_simple( $opt );
+
+  return $plot_cols;
+}
 
 
 
@@ -361,24 +437,20 @@ sub show_plot_and_exit {
 
 =item dumporama
 
-Report on state of object fields-- might
-inadvertantly run default/builder code by
-accessing them.
+Report on state of object fields.
 
 =cut
 
 sub dumporama {
   my $self = shift;
   say "Graphics::Skullplot self: ", Dumper( $self );
-#   printf "input_file: %s\n"     , $self->input_file;
-#   # printf "plot_hints: %s\n"     , $self->fryhash( $self->plot_hints );
-#   printf "plot_hints: %s\n"     , Dumper( $self->plot_hints );
-#   printf "working_area: %s\n"   , $self->working_area;
-#   printf "image_viewer: %s\n"   , $self->image_viewer;
-#   # printf "naming: %s\n"         , $self->fryhash( $self->naming );
-#   printf "naming: %s\n"         , Dumper( $self->naming );
-#   # printf "field_metadata: %s\n" , $self->fryhash( $self->field_metadata );
-#   printf "field_metadata: %s\n" , Dumper( $self->field_metadata );
+  printf "input_file: %s\n"     , $self->input_file;
+  # printf "plot_hints: %s\n"     , $self->fryhash( $self->plot_hints );
+  printf "plot_hints: %s\n"     , Dumper( $self->plot_hints );
+  printf "working_area: %s\n"   , $self->working_area;
+  printf "image_viewer: %s\n"   , $self->image_viewer;
+  # printf "naming: %s\n"         , $self->fryhash( $self->naming );
+  printf "naming: %s\n"         , Dumper( $self->naming );
 }
 
 
@@ -411,6 +483,36 @@ sub fryhash {
 
 =back
 
+=head1 NOTES 
+
+=head2 TODO
+
+=over 
+
+=item * 
+
+Limited to two group by categories (in addition to the x-axis): used with colour & shape
+If there's more than 2, fuse them together into a compound, use with colour
+
+=item * 
+
+See R Graphics Cookbook, p.205: setting up the tics and labels.
+
+    $pc .= 'p + scale_x_date';
+    $pc .= '';
+
+=item * 
+
+builder_image_viewer currently just returns a hardcoded selection
+(the ImageMagick "display" program):
+Look for the first available viewer from a list of likely ones?
+But a user defined viewer should override this search.
+(A command line option for skullplot.pl)
+
+
+=back
+
+
 =head1 AUTHOR
 
 Joseph Brenner, E<lt>doom@kzsu.stanford.eduE<gt>,
@@ -419,56 +521,6 @@ Joseph Brenner, E<lt>doom@kzsu.stanford.eduE<gt>,
 =head1 COPYRIGHT AND LICENSE
 
 Copyright (C) 2016 by Joseph Brenner
-
-This program is free software; you can redistribute it and/or modify it
-under the terms of either: the GNU General Public License as published
-by the Free Software Foundation; or the Artistic License.
-
-See http://dev.perl.org/licenses/ for more information.
-
-=head1 BUGS
-
-Please report any bugs or feature requests to C<bug-emacs-run at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Emacs-Run>.  
-I will be notified, and then you'll automatically be notified of progress on your bug as I make changes.
-
-=head1 SUPPORT
-
-You can find documentation for this module with the perldoc command.
-
-    perldoc Emacs::Run
-
-You can also look for information at:
-
-=over 4
-
-=item * RT: CPAN's request tracker
-
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Emacs-Run>
-
-=item * AnnoCPAN: Annotated CPAN documentation
-
-L<http://annocpan.org/dist/Emacs-Run>
-
-=item * CPAN Ratings
-
-L<http://cpanratings.perl.org/d/Emacs-Run>
-
-=item * Search CPAN
-
-L<http://search.cpan.org/dist/Emacs-Run/>
-
-=back
-
-=head1 COPYRIGHT AND LICENSE
-
-Copyright (C) 2016 by Joseph Brenner
-
-This program is free software; you can redistribute it and/or modify it
-under the terms of either: the GNU General Public License as published
-by the Free Software Foundation; or the Artistic License.
-
-See http://dev.perl.org/licenses/ for more information.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published

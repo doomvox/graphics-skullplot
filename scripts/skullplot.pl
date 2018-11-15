@@ -86,7 +86,7 @@ my  $prog    = basename($0);
 
 my $DEBUG   = 0;
 my $working_area = "$HOME/.skullplot";   # default
-my ($dependent_spec, $independent_spec, $indie_count, $image_viewer);
+my ($dependent_requested, $independent_requested, $indie_count, $image_viewer);
 
 GetOptions ("d|debug"       => \$DEBUG,
             "v|version"     => sub{ say_version(); },
@@ -97,8 +97,8 @@ GetOptions ("d|debug"       => \$DEBUG,
            "working_area=s" => \$working_area,
 
            ## Experimental, alternate interface
-           "dependents=s"   => \$dependent_spec,   # the x-axis, plus any gbcats
-           "independents=s" => \$independent_spec, # the y-axis
+           "dependents=s"   => \$dependent_requested,   # the x-axis, plus any gbcats
+           "independents=s" => \$independent_requested, # the y-axis
            ) or say_usage();
 
 ### $image_viewer ||= 'display';
@@ -122,18 +122,20 @@ unless( $dbox_file ) {
   die "An input data file (*.dbox) is required.";
 }
 
-# TODO maybe yagni out this *_spec shit
-if( $dependent_spec && not( $independent_spec ) ) {
+# TODO my feeling is these "requested" fields could become 
+#      important in later elisp apps, though they're useless
+#      for my immediate goal.
+if( $dependent_requested && not( $independent_requested ) ) {
   die "When using dependents option, also need independents.";
-} elsif( $independent_spec && not( $dependent_spec ) ) {
+} elsif( $independent_requested && not( $dependent_requested ) ) {
   die "When using independents option, also need dependents.";
-} elsif( $indie_count && $dependent_spec) {
+} elsif( $indie_count && $dependent_requested) {
   die "Use either indie_count or dependents/independents options, not both.";
 }
 
-if ( $dependent_spec ) {
+if ( $dependent_requested ) {
   ($DEBUG) &&
-    print STDERR "Using independents: $independent_spec and dependents: $dependent_spec\n";
+    print STDERR "Using independents: $independent_requested and dependents: $dependent_requested\n";
 } elsif( $indie_count )  {
   ($DEBUG) &&
     print STDERR "Given indie_count: $indie_count\n";
@@ -144,8 +146,8 @@ if ( $dependent_spec ) {
 }
 
 my $opt = { indie_count      => $indie_count,
-            dependent_spec   => $dependent_spec,
-            independent_spec => $independent_spec,
+            dependent_requested   => $dependent_requested,
+            independent_requested => $independent_requested,
            };
 
 my %gsp_args = 
@@ -234,6 +236,9 @@ See http://dev.perl.org/licenses/ for more information.
 Command line I use to excercize this at the moment:
 
   /home/doom/End/Cave/SkullPlot/Wall/Graphics-Skullplot/scripts/skullplot.pl /home/doom/End/Cave/SkullPlot/tmp/silver_polls_number_vs_bias.dbox
+
+
+  /home/doom/End/Cave/SkullPlot/Wall/Graphics-Skullplot/scripts/skullplot.pl /home/doom/End/Cave/SkullPlot/tmp/e_by_date.dbox
 
 =cut
 

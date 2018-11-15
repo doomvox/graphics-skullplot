@@ -6,7 +6,7 @@ use 5.10.0;
 use warnings;
 use strict;
 $|=1;
-my $DEBUG = 1;              # TODO set to 0 before ship
+my $DEBUG = 0;
 use Data::Dumper;
 use File::Path      qw( mkpath );
 use File::Basename  qw( fileparse basename dirname );

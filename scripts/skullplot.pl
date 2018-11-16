@@ -97,8 +97,6 @@ GetOptions ("d|debug"       => \$DEBUG,
            "independents=s" => \$independent_requested, # the y-axis
            ) or say_usage();
 
-### $image_viewer ||= 'display';
-
 mkpath( $working_area ) unless( -d $working_area );
 
 # TODO dev only: remove when shipped.
@@ -178,24 +176,6 @@ sub say_version {
 
 
 __END__
-
-=head1 NOTES
-
-I think I like the idea of doing it like this:
-
-  One gb_cat:   use color
-  Two gb_cats:  use shape for one with fewest values, use color for the other.
-                   (( but if that value count exceeds ~6, fuse both as color ))
-  Three gb_cats: use shape for the one with fewest values (( ditto ))
-                 fuse the remaining items into a joint string value,
-                 assign that to color.
-
-And: this logic is getting complex enough to move to a Skullplot module
-of some sort, which could open the door to a seperate package again.
-
-What name? No reason to *presume* R/ggplot2 is there? 
-That could be a plug-in style choice. 
-
 
 =head1 AUTHOR
 

@@ -28,7 +28,7 @@ Graphics::Skullplot is a module that works with the result from a database
 select in the common tabular text "data box" format. It has routines 
 to generate and display plots of the data in png format.
 
-Internally it uses the [Data::BoxFormat](https://metacpan.org/pod/Data::BoxFormat) module to parse the text table,
+Internally it uses the [Table::BoxFormat](https://metacpan.org/pod/Table::BoxFormat) module to parse the text table,
 and the [Graphics::Skullplot::ClassifyColumns](https://metacpan.org/pod/Graphics::Skullplot::ClassifyColumns) module to determine the types of the columns.
 
 The default image viewer is the ImageMagick "display" command.

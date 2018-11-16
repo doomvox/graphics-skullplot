@@ -17,6 +17,9 @@ my $DEBUG = 0;
 
 =head1 SYNOPSIS
 
+   # To use this from emacs, see scripts/skullplot.el.
+   # That elisp code accesses the perl script: scripts/skullplot.pl
+
    # the code used by skullplot.pl
    my $plot_hints = { indie_count           => $indie_count,
                       dependent_requested   => $dependent_requested,
@@ -41,6 +44,13 @@ Internally it uses the L<Table::BoxFormat> module to parse the text table,
 and the L<Graphics::Skullplot::ClassifyColumns> module to determine the types of the columns.
 
 The default image viewer is the ImageMagick "display" command.
+
+The immediate use for this code is to act as the back-end for the included 
+Emacs package scripts/skullplot.el, so that database select results 
+generated in an emacs shell window can be immediately plotted.  
+
+This elisp code calls scripts/skullplot.pl, which might be used in
+other contexts.
 
 =head1 METHODS
 

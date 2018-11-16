@@ -4,7 +4,7 @@ use MooX::Types::MooseLike::Base qw(:all);
 
 =head1 NAME
 
-Graphics::Skullplot - Plot the result of an SQL select from the terminal
+Graphics::Skullplot - Plot the result of an SQL select (e.g. from an emacs shell window)
 
 =head1 VERSION
 
@@ -209,51 +209,6 @@ sub plot_tsv_to_png {
   $self->generate_png_file( $pc, $fn );
 }
 
-
-
-=item plot_tsv_to_png_x_date_y_numeric
-
-EXPERIMENTAL.  NOT WORKING.
-
-Variant of L<plot_tsv_to_png>, to handle dates better on the horizontal axis.
-
-TODO:  R lang issues with Date objects in the data frame "skull"
-
-=cut
-
-sub plot_tsv_to_png_x_date_y_numeric {
-  my $self = shift;
-  my $cd = shift; 
-  my $fn = $self->naming         || shift;
-
-#  my ($x_field, $y_field, $gb_cats) = @{ $cd->{ qw( x  y  gb_cats ) }}; # hash slice (mangled)
-
-  my $x_field = $cd->{ indie_x };
-#  my $y_field = $cd->{ y };
-  my $y_field = $cd->{ y } || $cd->{ dependents_y }->[0] ;
-  my $gb_cats = $cd->{ gb_cats };
-
-  my ($gb_cat1, $gb_cat2);
-  $gb_cat1 = $gb_cats->[0] if $gb_cats->[0];
-  $gb_cat2 = $gb_cats->[1] if $gb_cats->[1];
-
-  # plot code
-  my $pc = 'p <- ggplot( skull, ' ;
-  $pc .= '               aes(' ;
-  $pc .= "                    x = $x_field," ;
-  $pc .= "                    y = $y_field, " ;
-  $pc .= "                    colour = $gb_cat1," if $gb_cat1;
-  $pc .= "                    shape  = $gb_cat2 " if $gb_cat2;
-  $pc .= '                          ))' ;
-  $pc .= ' + geom_point( ' ;
-  $pc .= "              size  = 2.5 " ;
-  $pc .= '              )  ' ;
-
-  $self->generate_png_file( $pc, $fn );
-
-}
-
-
 =item generate_png_file
 
 Example usage:
@@ -375,8 +330,7 @@ it does an "exec").
 
 sub show_plot_and_exit {
   my $self = shift;
-
-  if ($DEBUG) { say "AAA"; $self->dumporama() };
+  if ($DEBUG) { say "Running show_plot_and_exit: "; $self->dumporama() };
 
   my $dbox_file = $self->input_file || shift;
 
@@ -513,12 +467,9 @@ See R Graphics Cookbook, p.205: setting up the tics and labels.
 
 =item * 
 
-builder_image_viewer currently just returns a hardcoded selection
-(the ImageMagick "display" program):
-Look for the first available viewer from a list of likely ones?
-But a user defined viewer should override this search.
-(A command line option for skullplot.pl)
-
+Currently this defaults to viewing images using the "display" program.
+Alternately, the builder_image_viewer could scan through a list of 
+likely viewers and pick the first that's installed.
 
 =back
 

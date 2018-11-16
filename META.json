@@ -1,5 +1,5 @@
 {
-   "abstract" : "Plot the result of an SQL select from the terminal",
+   "abstract" : "Plot the result of an SQL select (e.g. from an emacs shell window)",
    "author" : [
       "Joseph Brenner, <doom@kzsu.stanford.edu>,"
    ],
@@ -37,7 +37,14 @@
       },
       "runtime" : {
          "requires" : {
-            "perl" : "5.008005"
+            "Data::BoxFormat" : "0.01",
+            "Getopt::Long" : "2.49",
+            "Image::Magick" : "v6.9.7",
+            "Moo" : "2.003004",
+            "MooX::Types::MooseLike::Base" : "0.29",
+            "Scalar::Classify" : "0.03",
+            "perl" : "5.010000",
+            "utf8::all" : "0.024"
          }
       },
       "test" : {
@@ -47,7 +54,18 @@
       }
    },
    "release_status" : "stable",
-   "version" : "0.01",
+   "resources" : {
+      "bugtracker" : {
+         "web" : "https://github.com/doomvox/graphics-skullplot/issues"
+      },
+      "homepage" : "https://github.com/doomvox/graphics-skullplot",
+      "repository" : {
+         "type" : "git",
+         "url" : "https://github.com/doomvox/graphics-skullplot.git",
+         "web" : "https://github.com/doomvox/graphics-skullplot"
+      }
+   },
+   "version" : "0.02",
    "x_contributors" : [
       "Joseph Brenner <doomvox@gmail.com>"
    ],

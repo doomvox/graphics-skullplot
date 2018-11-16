@@ -1,12 +1,15 @@
 # NAME
 
-Graphics::Skullplot - Plot the result of an SQL select from the terminal
+Graphics::Skullplot - Plot the result of an SQL select (e.g. from an emacs shell window)
 
 # VERSION
 
 Version 0.01
 
 # SYNOPSIS
+
+    # To use this from emacs, see scripts/skullplot.el.
+    # That elisp code accesses the perl script: scripts/skullplot.pl
 
     # the code used by skullplot.pl
     my $plot_hints = { indie_count           => $indie_count,
@@ -32,6 +35,13 @@ Internally it uses the [Table::BoxFormat](https://metacpan.org/pod/Table::BoxFor
 and the [Graphics::Skullplot::ClassifyColumns](https://metacpan.org/pod/Graphics::Skullplot::ClassifyColumns) module to determine the types of the columns.
 
 The default image viewer is the ImageMagick "display" command.
+
+The immediate use for this code is to act as the back-end for the included 
+Emacs package scripts/skullplot.el, so that database select results 
+generated in an emacs shell window can be immediately plotted.  
+
+This elisp code calls scripts/skullplot.pl, which might be used in
+other contexts.
 
 # METHODS
 
@@ -78,14 +88,6 @@ The default image viewer is the ImageMagick "display" command.
     Example usages:  
 
         $self->plot_tsv_to_png( $plot_cols ); 
-
-- plot\_tsv\_to\_png\_x\_date\_y\_numeric
-
-    EXPERIMENTAL.  NOT WORKING.
-
-    Variant of [plot\_tsv\_to\_png](https://metacpan.org/pod/plot_tsv_to_png), to handle dates better on the horizontal axis.
-
-    TODO:  R lang issues with Date objects in the data frame "skull"
 
 - generate\_png\_file
 
@@ -170,11 +172,9 @@ If there's more than 2, fuse them together into a compound, use with colour
         $pc .= 'p + scale_x_date';
         $pc .= '';
 
-- builder\_image\_viewer currently just returns a hardcoded selection
-(the ImageMagick "display" program):
-Look for the first available viewer from a list of likely ones?
-But a user defined viewer should override this search.
-(A command line option for skullplot.pl)
+- Currently this defaults to viewing images using the "display" program.
+Alternately, the builder\_image\_viewer could scan through a list of 
+likely viewers and pick the first that's installed.
 
 # AUTHOR
 

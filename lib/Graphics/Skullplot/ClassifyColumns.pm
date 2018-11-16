@@ -13,7 +13,7 @@ Version 0.01
 =cut 
 
 # TODO revise these before shipping
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 my $DEBUG = 1;
 
 =head1 SYNOPSIS

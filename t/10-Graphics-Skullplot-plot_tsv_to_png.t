@@ -14,7 +14,6 @@ use File::Copy      qw( copy move );
 use Fatal           qw( open close mkpath copy move );
 use Cwd             qw( cwd abs_path );
 use Env             qw( HOME );
-use List::MoreUtils qw( any );
 
 use Test::More;
 
@@ -57,7 +56,7 @@ ok(1, "Traditional: If we made it this far, we're ok.");
    my $tsv_file  = $naming->{ tsv };
 
    # the input from the dbox file output directly to a tsv file 
-   my $dbx = Data::BoxFormat->new( input_file  => $dbox_file ); 
+   my $dbx = Table::BoxFormat->new( input_file  => $dbox_file ); 
    my $data = $dbx->output_to_tsv( $tsv_file ); # also returns a ref to an array of arrays
 
    my $plot_cols = $gsp->classify_columns( $data );
@@ -108,7 +107,7 @@ ok(1, "Traditional: If we made it this far, we're ok.");
    my $tsv_file  = $naming->{ tsv };
 
    # the input from the dbox file output directly to a tsv file 
-   my $dbx = Data::BoxFormat->new( input_file  => $dbox_file ); 
+   my $dbx = Table::BoxFormat->new( input_file  => $dbox_file ); 
    my $data = $dbx->output_to_tsv( $tsv_file ); # also returns a ref to an array of arrays
 
    my $plot_cols = $gsp->classify_columns( $data );

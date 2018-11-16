@@ -56,7 +56,7 @@ plot (the y-axis).
 The default for dependent variables: the first column.
 The default of independent variables: all of the following columns
 
-The supported input data formats are as in the L<Data::BoxFormat> module.
+The supported input data formats are as in the L<Table::BoxFormat> module.
 At present, this is mysql and postgresql (including the unicode form).
 
 =cut
@@ -71,11 +71,7 @@ use File::Path      qw( mkpath );
 use File::Basename  qw( fileparse basename dirname );
 use File::Copy      qw( copy move );
 use autodie         qw( :all mkpath copy move ); # system/exec along with open, close, etc
-use Cwd             qw( cwd abs_path );
 use Env             qw( HOME );
-use List::MoreUtils qw( any );
-use String::ShellQuote qw( shell_quote_best_effort );
-use Config::Std;
 use Getopt::Long    qw( :config no_ignore_case bundling );
 use List::Util      qw( first max maxstr min minstr reduce shuffle sum );
 
@@ -109,11 +105,9 @@ mkpath( $working_area ) unless( -d $working_area );
 use FindBin qw( $Bin );
 use lib ("$Bin/../lib/",
          "$Bin/../../Data-BoxFormat/lib",
-         "$Bin/../../Data-Classify/lib",
          "$Bin/../../Graphics-Skullplot/lib");
 
-use Data::BoxFormat;
-use Data::Classify;
+use Table::BoxFormat;
 use Graphics::Skullplot;
 
 my $dbox_file = shift;
@@ -122,9 +116,6 @@ unless( $dbox_file ) {
   die "An input data file (*.dbox) is required.";
 }
 
-# TODO my feeling is these "requested" fields could become 
-#      important in later elisp apps, though they're useless
-#      for my immediate goal.
 if( $dependent_requested && not( $independent_requested ) ) {
   die "When using dependents option, also need independents.";
 } elsif( $independent_requested && not( $dependent_requested ) ) {
@@ -199,22 +190,11 @@ I think I like the idea of doing it like this:
                  fuse the remaining items into a joint string value,
                  assign that to color.
 
-((And: this logic is getting complex enough to move to a Skullplot module
-of some sort, which could open the door to a seperate package again.))
+And: this logic is getting complex enough to move to a Skullplot module
+of some sort, which could open the door to a seperate package again.
 
-  What name? No reason to *presume* R/ggplot2, that's a plug-in style choice.
-
-=head2 SNIPPETS
-
-  # TODO make choice of display app settable...
-  #      have an intelligent default: look at what's available.
-
-  # Running a desktop app is faster than R's browseURL:
-  # system("gthumb $png_file    $erroff");
-  # system("eog $png_file       $erroff");
-  # system("display $png_file   $erroff");  # ImageMagick
-  # exec(qq{ display  $png_file $erroff }); # ImageMagick
-  # exec(qq{ display -title 'skullplot'  $png_file $erroff }); # ImageMagick
+What name? No reason to *presume* R/ggplot2 is there? 
+That could be a plug-in style choice. 
 
 
 =head1 AUTHOR
@@ -231,14 +211,6 @@ by the Free Software Foundation; or the Artistic License.
 
 See http://dev.perl.org/licenses/ for more information.
 
-=head1 trials
-
-Command line I use to excercize this at the moment:
-
-  /home/doom/End/Cave/SkullPlot/Wall/Graphics-Skullplot/scripts/skullplot.pl /home/doom/End/Cave/SkullPlot/tmp/silver_polls_number_vs_bias.dbox
-
-
-  /home/doom/End/Cave/SkullPlot/Wall/Graphics-Skullplot/scripts/skullplot.pl /home/doom/End/Cave/SkullPlot/tmp/e_by_date.dbox
 
 =cut
 

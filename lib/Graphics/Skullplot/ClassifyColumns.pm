@@ -23,7 +23,7 @@ my $DEBUG = 1;
   my $cc = Graphics::Skullplot::ClassifyColumns->new( data => $data );  
   my $plot_cols = 
     $cc->classify_columns_simple( { indie_count => $indie_count, } );
-    
+
 =head1 DESCRIPTION
 
 Graphics::Skullplot::ClassifyColumns is a stripped down version 
@@ -46,8 +46,7 @@ use Data::Dumper;
 
 use Scalar::Classify qw();
 
-=cut
-
+=over
 
 =item new
 

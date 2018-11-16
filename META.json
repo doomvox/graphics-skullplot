@@ -1,16 +1,16 @@
 {
-   "abstract" : "Blah blah blah",
+   "abstract" : "Plot the result of an SQL select from the terminal",
    "author" : [
-      "Joseph Brenner <doom@kzsu.stanford.edu>"
+      "Joseph Brenner, <doom@kzsu.stanford.edu>,"
    ],
    "dynamic_config" : 0,
-   "generated_by" : "Dist::Milla version v1.0.16, Dist::Zilla version 6.008, CPAN::Meta::Converter version 2.143240",
+   "generated_by" : "Dist::Milla version v1.0.18, Dist::Zilla version 6.010, CPAN::Meta::Converter version 2.150010",
    "license" : [
       "perl_5"
    ],
    "meta-spec" : {
       "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
-      "version" : "2"
+      "version" : 2
    },
    "name" : "Graphics-Skullplot",
    "no_index" : {
@@ -31,7 +31,7 @@
       },
       "develop" : {
          "requires" : {
-            "Dist::Milla" : "v1.0.16",
+            "Dist::Milla" : "v1.0.18",
             "Test::Pod" : "1.41"
          }
       },
@@ -48,6 +48,9 @@
    },
    "release_status" : "stable",
    "version" : "0.01",
-   "x_serialization_backend" : "JSON::XS version 2.34"
+   "x_contributors" : [
+      "Joseph Brenner <doomvox@gmail.com>"
+   ],
+   "x_serialization_backend" : "Cpanel::JSON::XS version 3.0238"
 }
 

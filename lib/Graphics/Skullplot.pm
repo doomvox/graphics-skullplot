@@ -37,7 +37,7 @@ Graphics::Skullplot is a module that works with the result from a database
 select in the common tabular text "data box" format. It has routines 
 to generate and display plots of the data in png format.
 
-Internally it uses the L<Data::BoxFormat> module to parse the text table,
+Internally it uses the L<Table::BoxFormat> module to parse the text table,
 and the L<Graphics::Skullplot::ClassifyColumns> module to determine the types of the columns.
 
 The default image viewer is the ImageMagick "display" command.
@@ -52,15 +52,15 @@ use 5.10.0;
 use Carp;
 use Data::Dumper;
 use File::Basename  qw( fileparse basename dirname );
-use List::Util      qw( first max maxstr min minstr reduce shuffle sum );
-use List::MoreUtils qw( any zip uniq );
+# use List::Util      qw( first max maxstr min minstr reduce shuffle sum );
+# use List::MoreUtils qw( any zip uniq );
 
 use Image::Magick;
 
-use lib "../../../Data-Classify/lib";   
+use lib "../../../Table-Classify/lib";   
 use lib "../../../Data-BoxFormat/lib";  
 
-use Data::BoxFormat;
+use Table::BoxFormat;
 use Graphics::Skullplot::ClassifyColumns;
 
 =item new
@@ -164,7 +164,7 @@ The file names (tsv, png, plus internal formats) come from the
 "naming" object field.
 
 Example usages:  
-  
+
   $self->plot_tsv_to_png( $plot_cols ); 
 
 =cut 
@@ -377,7 +377,7 @@ sub show_plot_and_exit {
   ($DEBUG) && print "input dbox name: $dbox_name\nintermediate tsv_file: $tsv_file\n";
 
   # the input from the dbox file output directly to a tsv file 
-  my $dbx = Data::BoxFormat->new( input_file  => $dbox_file ); 
+  my $dbx = Table::BoxFormat->new( input_file  => $dbox_file ); 
   my $data = $dbx->output_to_tsv( $tsv_file ); # also returns a ref to an array of arrays
 
   my $plot_cols = $self->classify_columns( $data );

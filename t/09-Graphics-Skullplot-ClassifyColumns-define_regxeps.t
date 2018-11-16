@@ -14,7 +14,6 @@ use File::Copy      qw( copy move );
 use Fatal           qw( open close mkpath copy move );
 use Cwd             qw( cwd abs_path );
 use Env             qw( HOME );
-use List::MoreUtils qw( any );
 
 use Test::More;
 

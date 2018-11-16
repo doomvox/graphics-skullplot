@@ -18,20 +18,20 @@
 ;; plots of SQL query results in this "dbox" form form (by the way:
 ;; database purists dislike pronouncing SQL as 'sequel', an obvious
 ;; alternative is 'skull').  It works with a perl script skullplot.pl
-;; and a perl module Data::BoxFormat, and the R statistical language package
+;; and a perl module Table::BoxFormat, and the R statistical language package
 ;; ggplot2.
 
-;; (( TODO: every piece should check that all the other pieces are installed. ))
+;; TODO: really every piece should check that all the other pieces are installed. 
 
 ;;  The main user function here is:
-;;   skullplot-of-this-dbox
+;;   skullplot-this-dbox
 
 ;; Installation:
 
 ;; Put this file into your load-path and the following into your ~/.emacs:
 ;;   (require 'skullplot)
 
-;; TODO key assignment for skullplot-of-this-dbox in various shells and db interfaces...
+;; TODO key assignment for skullplot-this-dbox in various shells and db interfaces...
 
 ;;; Code:
 
@@ -107,16 +107,16 @@ and also the psql unicode lines:
 ;; dbox plotters
 ;; the main user command(s)
 
-;; wrapper to use as entry point (?)  TODO
+;; wrapper to use as entry point TODO obsolete now?
 (defun skullplot-basic-group-by ( indie-count )
   "Takes a numeric argument to distinguish dependent columns from independent.
 See section 'TODO'.  The argument defaults to 1."
   (interactive "p")
   ;; (message "indie-count: %d" indie-count )
-  (skullplot-of-this-dbox indie-count)
+  (skullplot-this-dbox indie-count)
  )
 
-(defun skullplot-of-this-dbox ( indie-count )
+(defun skullplot-this-dbox ( indie-count )
   "Pop a window with a graphical display of data in the current
 or immediately previous dbox."
   (interactive "p")
@@ -159,7 +159,7 @@ or immediately previous dbox."
 
 (defun skullplot-of-region (beg end)
   "Pop a window with a graphical display of data in dbox in region.
-You might use this if the skullplot-of-this-dbox heuristics fail,
+You might use this if the skullplot-this-dbox heuristics fail,
 and you want to specify what to plot manually."
   (interactive "r") ;; r -- Region: point and mark as 2 numeric args, smallest first.  Does no I/O.
 
@@ -181,7 +181,6 @@ and you want to specify what to plot manually."
     ;;   TODO extra credit: add safety features, e.g. preserve any existing content
 
     (insert table)
-
     (save-buffer)
     ;;(write-file nil)
     ;; TODO close the buffer?  Or just the window?

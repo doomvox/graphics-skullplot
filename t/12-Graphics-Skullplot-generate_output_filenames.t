@@ -19,7 +19,9 @@ use List::MoreUtils qw( any );
 use Test::More;
 
 BEGIN {
-  use_ok( 'Graphics::Skullplot' )
+  use FindBin qw($Bin);
+  use lib ("$Bin/../lib/");
+  use_ok( 'Graphics::Skullplot' , )
 }
 
 ok(1, "Traditional: If we made it this far, we're ok.");

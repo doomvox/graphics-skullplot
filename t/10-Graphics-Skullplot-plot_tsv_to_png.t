@@ -20,6 +20,7 @@ use Test::More;
 BEGIN {
   use FindBin qw($Bin);
   use lib ("$Bin/../lib/");
+  use lib ("$Bin/../../Table-BoxFormat/lib");  
   use_ok( 'Graphics::Skullplot' , )
 }
 

@@ -8,12 +8,12 @@ Graphics::Skullplot::ClassifyColumns - simple type inference of columns of tabul
 
 =head1 VERSION
 
-Version 0.01
+Version 0.03
 
 =cut 
 
 # TODO revise these before shipping
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 my $DEBUG = 1;
 
 =head1 SYNOPSIS

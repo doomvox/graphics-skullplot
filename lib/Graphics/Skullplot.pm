@@ -8,11 +8,11 @@ Graphics::Skullplot - Plot the result of an SQL select (e.g. from an emacs shell
 
 =head1 VERSION
 
-Version 0.01
+Version 0.03
 
 =cut
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 my $DEBUG = 0;
 
 =head1 SYNOPSIS
@@ -68,7 +68,7 @@ use File::Basename  qw( fileparse basename dirname );
 use Image::Magick;
 
 use lib "../../../Table-Classify/lib";   
-use lib "../../../Data-BoxFormat/lib";  
+use lib "../../../Table-BoxFormat/lib";  
 
 use Table::BoxFormat;
 use Graphics::Skullplot::ClassifyColumns;

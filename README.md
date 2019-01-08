@@ -4,7 +4,7 @@ Graphics::Skullplot - Plot the result of an SQL select (e.g. from an emacs shell
 
 # VERSION
 
-Version 0.01
+Version 0.03
 
 # SYNOPSIS
 

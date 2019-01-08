@@ -4,7 +4,7 @@
       "Joseph Brenner, <doom@kzsu.stanford.edu>,"
    ],
    "dynamic_config" : 0,
-   "generated_by" : "Dist::Milla version v1.0.18, Dist::Zilla version 6.010, CPAN::Meta::Converter version 2.150010",
+   "generated_by" : "Dist::Milla version v1.0.18, Dist::Zilla version 6.012, CPAN::Meta::Converter version 2.150010",
    "license" : [
       "perl_5"
    ],
@@ -37,7 +37,7 @@
       },
       "runtime" : {
          "requires" : {
-            "Data::BoxFormat" : "0.01",
+            "Table::BoxFormat" : "0.01",
             "Getopt::Long" : "2.49",
             "Image::Magick" : "v6.9.7",
             "Moo" : "2.003004",
@@ -65,10 +65,11 @@
          "web" : "https://github.com/doomvox/graphics-skullplot"
       }
    },
-   "version" : "0.02",
+   "version" : "0.03",
    "x_contributors" : [
       "Joseph Brenner <doomvox@gmail.com>"
    ],
+   "x_generated_by_perl" : "v5.26.2",
    "x_serialization_backend" : "Cpanel::JSON::XS version 3.0238"
 }
 

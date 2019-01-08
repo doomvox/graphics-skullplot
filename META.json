@@ -37,7 +37,7 @@
       },
       "runtime" : {
          "requires" : {
-            "Table::BoxFormat" : "0.01",
+            "Data::BoxFormat" : "0.01",
             "Getopt::Long" : "2.49",
             "Image::Magick" : "v6.9.7",
             "Moo" : "2.003004",
